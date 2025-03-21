@@ -1,0 +1,29 @@
+name: Build SMS App APK
+on: [push]  # Runs on every push
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Ubuntu VM
+    steps:
+    - uses: actions/checkout@v3  # Clones repo
+      name: Checkout code
+    - uses: actions/setup-node@v3  # Sets up Node.js
+      with: { node-version: '18' }
+      name: Setup Node.js
+    - run: npm install -g cordova  # Installs Cordova
+      name: Install Cordova
+    - uses: actions/setup-java@v3  # Sets up Java 11
+      with: { java-version: '11' }
+      name: Setup Java
+    - uses: android-actions/setup-android@v3  # Sets up Android SDK
+      name: Setup Android SDK
+    - run: cordova platform add android  # Adds Android platform
+      name: Add Android platform
+    - run: cordova plugin add cordova-plugin-sms  # Adds SMS plugin
+      name: Add SMS plugin
+    - run: cordova build android --release  # Builds APK
+      name: Build APK
+    - uses: actions/upload-artifact@v3  # Uploads APK
+      with:
+        name: sms-app-release
+        path: platforms/android/app/build/outputs/apk/release/app-release.apk
+      name: Upload APK
