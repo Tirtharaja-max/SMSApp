@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMS App</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <div class="container">
+        <div id="auth-section">
+            <h2>Login</h2>
+            <input type="email" id="email-input" placeholder="Enter your email">
+            <button onclick="sendVerificationEmail()">Send Verification Link</button>
+            <p id="auth-message"></p>
+        </div>
+        <div id="app-section" style="display: none;">
+            <h2>SMS App</h2>
+            <select id="contact-list" multiple size="5">
+                <option value="">Select Contacts</option>
+            </select>
+            <button onclick="selectAllContacts()">Select All</button>
+            <textarea id="message-input" placeholder="Type your message"></textarea>
+            <button onclick="sendSMS()">Send SMS</button>
+            <p id="status-message"></p>
+        </div>
+    </div>
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/email.min.js"></script>
+</body>
+</html>	
