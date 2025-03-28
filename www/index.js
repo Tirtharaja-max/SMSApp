@@ -5,11 +5,16 @@ const firebaseConfig = {
     projectId: "smstirtha",
     storageBucket: "smstirtha.firebasestorage.app",
     messagingSenderId: "67088579557",
-   appId: "1:67088579557:web:a3fc5a690c9a0d169ccd0c", // Replace with real appId from Firebase Console
+    appId: "1:67088579557:web:placeholder_hash" // REPLACE WITH REAL appId
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+try {
+    firebase.initializeApp(firebaseConfig);
+    console.log("Firebase initialized successfully");
+} catch (error) {
+    console.error("Firebase initialization failed:", error);
+}
 
 const approvedUsersSheet = "https://docs.google.com/spreadsheets/d/10FdflYy5fTyD0FeTy3UC7cCSsXu-jjnpuxWQNfV2dKA/export?format=csv";
 const contactsSheet = "https://docs.google.com/spreadsheets/d/1tAQXaJYe4Bqdf6rIiXh1006HIkNaDtTM8CNxg3TDK-o/export?format=csv";
@@ -19,18 +24,44 @@ let contacts = [];
 
 async function fetchSheetData(url, label) {
     try {
-        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        console.log(`Attempting to fetch ${label} from:`, url);
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Direct fetch failed for ${label}. Status: ${response.status}, StatusText: ${response.statusText}`);
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const text = await response.text();
         console.log(`Raw ${label} data:`, text);
-        const rows = text.trim().split("\n").slice(1);
-        return rows.map(row => row.replace(/"/g, "").trim());
+        const rows = text.trim().split("\n");
+        const dataRows = rows.slice(1).map(row => {
+            const columns = row.split(",");
+            return columns[0].replace(/"/g, "").trim();
+        });
+        return dataRows;
     } catch (error) {
-        console.error(`Fetch error for ${label}:`, error);
-        if (label === "Approved Users") return ["test@example.com"];
-        if (label === "Contacts") return ["Unknown,1234567890"];
-        return [];
+        console.error(`Direct fetch error for ${label}:`, error.message);
+        try {
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            console.log(`Trying proxy for ${label}:`, proxyUrl);
+            const proxyResponse = await fetch(proxyUrl);
+            if (!proxyResponse.ok) {
+                console.error(`Proxy fetch failed for ${label}. Status: ${proxyResponse.status}, StatusText: ${proxyResponse.statusText}`);
+                throw new Error(`Proxy error! Status: ${proxyResponse.status}`);
+            }
+            const text = await proxyResponse.text();
+            console.log(`Proxy Raw ${label} data:`, text);
+            const rows = text.trim().split("\n");
+            const dataRows = rows.slice(1).map(row => {
+                const columns = row.split(",");
+                return columns[0].replace(/"/g, "").trim();
+            });
+            return dataRows;
+        } catch (proxyError) {
+            console.error(`Proxy fetch error for ${label}:`, proxyError.message);
+            if (label === "Approved Users") return ["test@example.com"];
+            if (label === "Contacts") return ["Unknown,1234567890"];
+            return [];
+        }
     }
 }
 
@@ -48,6 +79,7 @@ async function loadApp() {
 
 // Google Login
 document.getElementById("google-login-btn").addEventListener("click", () => {
+    console.log("Button clicked!");
     const provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
@@ -56,13 +88,17 @@ document.getElementById("google-login-btn").addEventListener("click", () => {
             checkApprovedUser(userEmail);
         })
         .catch((error) => {
+            console.error("Login error:", error);
             document.getElementById("auth-message").textContent = "Login failed: " + error.message;
         });
 });
 
 function checkApprovedUser(email) {
+    console.log("Checking email:", email);
+    console.log("Approved users list:", approvedUsers);
     const authMessage = document.getElementById("auth-message");
     const isApproved = approvedUsers.some(user => user.toLowerCase() === email.toLowerCase());
+    console.log("Is approved?", isApproved);
     if (isApproved) {
         authMessage.textContent = "Login successful!";
         setTimeout(() => {
